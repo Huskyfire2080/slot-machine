@@ -1,26 +1,44 @@
-import { mutation } from "./_generated/server";
-import { v } from "convex/values";
+import { ConvexHttpClient } from "https://cdn.skypack.dev/convex/browser";
 
-const symbols = ["🍒", "🍋", "🔔", "⭐", "💎"];
-const reels = 3;
+const convex = new ConvexHttpClient("https://blessed-orca-65.convex.cloud");
 
-function randomSpin() {
-  return Array.from({ length: reels }, () =>
-    symbols[Math.floor(Math.random() * symbols.length)]
-  );
+const spinButton = document.getElementById("spinButton");
+const resultDisplay = document.getElementById("result");
+const resultMessage = document.getElementById("result-message");
+const coinCountDisplay = document.getElementById("coin-count");
+
+let coins = 10;
+
+export async function spinSlot() {
+  if (coins <= 0) {
+    resultMessage.textContent = "🚫 No coins left! Reset to play again.";
+    return;
+  }
+
+  const result = await convex.mutation("spin:spin", { player: "Alice" });
+  resultDisplay.textContent = result.join("");
+
+  if (result[0] === result[1] && result[1] === result[2]) {
+    resultMessage.textContent = "🎉 You win!";
+  } else {
+    resultMessage.textContent = "😞 Try again!";
+  }
+
+  updateCoins(-1);
+  updateHistory();
 }
 
-export const spin = mutation({
-  args: { player: v.string() },
-  handler: async ({ db }, args) => {
-    const result = randomSpin();
+function updateCoins(change) {
+  coins += change;
+  coinCountDisplay.textContent = coins;
+}
 
-    await db.insert("history", {
-      player: args.player,
-      result,
-      timestamp: Date.now(),
-    });
+export function resetGame() {
+  coins = 10;
+  coinCountDisplay.textContent = coins;
+  resultMessage.textContent = "";
+  resultDisplay.textContent = "🍒🍒🍒";
+}
 
-    return result;
-  },
-});
+window.resetGame = resetGame;
+spinButton.addEventListener("click", spinSlot);

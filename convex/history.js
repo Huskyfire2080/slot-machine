@@ -1,13 +1,17 @@
-import { query } from "./_generated/server";
-import { v } from "convex/values";
+import { ConvexHttpClient } from "https://cdn.skypack.dev/convex/browser";
 
-export const get = query({
-  args: { player: v.string() },
-  handler: async ({ db }, args) => {
-    return await db
-      .query("history")
-      .filter((q) => q.eq(q.field("player"), args.player))
-      .order("desc")
-      .take(10);
-  },
-});
+const convex = new ConvexHttpClient("https://blessed-orca-65.convex.cloud");
+const historyList = document.getElementById("history");
+
+export async function updateHistory() {
+  const spins = await convex.query("history:get", { player: "Alice" });
+  historyList.innerHTML = "";
+  spins.forEach((spin) => {
+    const li = document.createElement("li");
+    li.textContent = `${spin.result.join("")} - ${new Date(spin.timestamp).toLocaleTimeString()}`;
+    historyList.appendChild(li);
+  });
+}
+
+// Load history on page load
+updateHistory();
