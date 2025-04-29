@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slot Machine</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2rem; }
+    .slot { font-size: 4rem; margin: 1rem; }
+    button { padding: 0.5rem 1rem; font-size: 1.2rem; }
+  </style>
+</head>
+<body>
+  <h1>🎰 Slot Machine</h1>
+  <div id="result" class="slot">🍒🍒🍒</div>
+  <button id="spinButton">Spin</button>
+  <h2>Last 5 Spins</h2>
+  <ul id="history"></ul>
+
+  <script type="module">
+    import { ConvexHttpClient } from "https://cdn.skypack.dev/convex/browser";
+
+    const convex = new ConvexHttpClient("https://blessed-orca-65.convex.cloud");
+
+    async function spinSlot() {
+      const result = await convex.mutation("spin:spin", { player: "Alice" });
+      document.getElementById("result").textContent = result.join("");
+      updateHistory();
+    }
+
+    async function updateHistory() {
+      const spins = await convex.query("history:get", { player: "Alice" });
+      const list = document.getElementById("history");
+      list.innerHTML = "";
+      spins.forEach((spin) => {
+        const li = document.createElement("li");
+        li.textContent = spin.result.join("") + " - " + new Date(spin.timestamp).toLocaleTimeString();
+        list.appendChild(li);
+      });
+    }
+
+    document.getElementById("spinButton").addEventListener("click", spinSlot);
+
+    // Load history on page load
+    updateHistory();
+  </script>
+</body>
+</html>
